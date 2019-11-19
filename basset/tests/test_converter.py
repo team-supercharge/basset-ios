@@ -196,3 +196,4 @@ class TestConverter(TestCase):
         except AssetsDirContainsImagesetDirectoryException as e:
             self.assertEqual(e.imageset_directory_path, os.path.join(converter.input_dir, "test.xcassets","test.imageset"))
             self.assertEqual(e.assets_dir, converter.input_dir)
+

@@ -115,6 +115,7 @@ class Converter:
                 if "." in filename and filename[0] is not ".":
                     basename = filename.split(".")[0]
                     extension = filename.split(".")[1].lower()
+                    logging.info("selecting file0: " + basename + ", extension: " + extension)
 
                     if extension in Converter.allowed_image_types():
                         new_base_path = original_base_path.replace(self.input_dir, self.output_dir)
@@ -122,10 +123,14 @@ class Converter:
                             os.makedirs(new_base_path)
                         original_full_path = os.path.join(original_base_path, filename)
 
-                        destination_templates = [(1, ".png")]
-                        if extension is not "png":
-                            destination_templates.append((2, "@2x.png"))
-                            destination_templates.append((3, "@3x.png"))
+                        logging.info("selecting file: " + filename + ", extension: " + extension)
+                        if extension == "pdf":
+                            destination_templates = [(1, ".pdf", False)]
+                        else:
+                            destination_templates = [(1, ".png", True)]
+                            if extension != "png":
+                                destination_templates.append((2, "@2x.png", True))
+                                destination_templates.append((3, "@3x.png", True))
 
                         selected_destination_templates = []
                         for template in destination_templates:
@@ -141,10 +146,16 @@ class Converter:
                                     new_image_size = (original_size[0] * template[0], original_size[1] * template[0])
                                     destination_path = os.path.join(new_base_path, basename + template[1])
 
-                                    self.convert_single_file(original_full_path, destination_path, new_image_size,
-                                                             template[0], transparent_color)
+                                    if template[2]:
+                                        self.convert_single_file(original_full_path, destination_path, new_image_size,
+                                                                 template[0], transparent_color)
+                                        logging.info("Converted {0} to {1}".format(original_full_path, destination_path))
+                                    else:
+                                        os.system("cp {0} {1}".format(original_full_path, destination_path))
+                                        logging.info("Copied {0} to {1}".format(original_full_path, destination_path))
+
                                     converted_files_count += 1
-                                    logging.info("Converted {0} to {1}".format(original_full_path, destination_path))
+
                             except subprocess.CalledProcessError as error:
                                 logging.error("Error while processing {0}: {1}".format(original_full_path, error))
 

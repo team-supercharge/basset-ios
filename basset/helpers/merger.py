@@ -53,7 +53,61 @@ class Merger:
         merged_files_count = 0
         for path, subdirectories, files in os.walk(self.source_assets_dir):
             for filename in files:
-                if filename.lower().endswith(".png") or filename.lower().endswith(".jpg"):
+                logging.info("Trying to merge: " + filename)
+                if filename.lower().endswith(".pdf"):
+                    basename = filename.split(".")[0]
+                    asset_name = basename
+
+                    asset_dir_in_destination_xcasset = os.path.join(destination_xcassets_dir,
+                                                                    os.path.relpath(path, self.source_assets_dir),
+                                                                    asset_name + ".imageset")
+                    if not os.path.isdir(asset_dir_in_destination_xcasset):
+                        os.makedirs(asset_dir_in_destination_xcasset)
+
+                    # Create / update JSON file
+                    content_json_file_path = os.path.join(asset_dir_in_destination_xcasset, "Contents.json")
+
+                    contents_json = {
+                        "images": [],
+                        "info": {
+                            "version": 1,
+                            "author": "xcode",
+                        }
+                    }
+
+                    if os.path.isfile(content_json_file_path):
+                        with open(content_json_file_path, "r") as data_file:
+                            contents_json = json.load(data_file)
+
+                    image_found = False
+
+                    for index, scaled_image_dict in enumerate(contents_json["images"]):
+                        needed_keys_present = all(k in scaled_image_dict for k in ("idiom"))
+                        if needed_keys_present:
+                            is_universal_asset_with_scale = scaled_image_dict["idiom"] == "universal"
+
+                            if is_universal_asset_with_scale:
+                                contents_json["images"][index]["filename"] = filename
+                                image_found = True
+
+                    if not image_found:
+                        contents_json["images"].append(
+                            {
+                                "idiom": "universal",
+                                "filename": filename
+                            }
+                        )
+
+                    with open(content_json_file_path, "w+") as data_file:
+                        json.dump(contents_json, data_file, indent=1)
+
+                    # Copy image
+                    destination_path = os.path.join(asset_dir_in_destination_xcasset, filename)
+                    source_path = os.path.join(os.getcwd(), path, filename)
+                    shutil.copy2(source_path, destination_path)
+                    logging.info("Merged " + source_path)
+                    merged_files_count += 1
+                elif filename.lower().endswith(".png") or filename.lower().endswith(".jpg"):
                     basename = filename.split(".")[0]
 
                     if basename[-3:] in ["@2x", "@3x"]:
@@ -113,6 +167,8 @@ class Merger:
                     shutil.copy2(source_path, destination_path)
                     logging.info("Merged " + source_path)
                     merged_files_count += 1
+                else:
+                    logging.info("file skipped xcassets from merging: " + filename.lower())
 
         logging.info("Finished merging with xcassets folder. Merged " + str(merged_files_count) + " files.")
 
