@@ -79,24 +79,12 @@ class Merger:
                         with open(content_json_file_path, "r") as data_file:
                             contents_json = json.load(data_file)
 
-                    image_found = False
-
-                    for index, scaled_image_dict in enumerate(contents_json["images"]):
-                        needed_keys_present = all(k in scaled_image_dict for k in ("idiom"))
-                        if needed_keys_present:
-                            is_universal_asset_with_scale = scaled_image_dict["idiom"] == "universal"
-
-                            if is_universal_asset_with_scale:
-                                contents_json["images"][index]["filename"] = filename
-                                image_found = True
-
-                    if not image_found:
-                        contents_json["images"].append(
-                            {
-                                "idiom": "universal",
-                                "filename": filename
-                            }
-                        )
+                    contents_json["images"] = [
+                        {
+                            "idiom": "universal",
+                            "filename": filename
+                        }
+                    ]
 
                     with open(content_json_file_path, "w+") as data_file:
                         json.dump(contents_json, data_file, indent=1)
