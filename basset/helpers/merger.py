@@ -92,7 +92,12 @@ class Merger:
                     # Copy image
                     destination_path = os.path.join(asset_dir_in_destination_xcasset, filename)
                     source_path = os.path.join(os.getcwd(), path, filename)
-                    shutil.copy2(source_path, destination_path)
+                    if not os.path.exists(destination_path):
+                        shutil.copy2(source_path, destination_path)
+                        logging.info("Copied to {0}".format(destination_path))
+                    else:
+                        logging.info("Skipping {0}, it already exists".format(destination_path))
+
                     logging.info("Merged " + source_path)
                     merged_files_count += 1
                 elif filename.lower().endswith(".png") or filename.lower().endswith(".jpg"):
